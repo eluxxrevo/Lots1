@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOT - NFT Marketplace</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <style>
+        :root {
+            --royal-gold: #D4AF37;
+            --dark-gold: #996515;
+            --light-gold: #F5D98B;
+            --pure-white: #FFFFFF;
+            --off-white: #F8F9FA;
+            --dark-bg: #121212;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--off-white);
+            color: #333;
+        }
+        
+        .navbar {
+            background-color: var(--dark-bg);
+            border-bottom: 2px solid var(--royal-gold);
+        }
+        
+        .navbar-brand {
+            color: var(--royal-gold) !important;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        
+        .nav-link {
+            color: var(--light-gold) !important;
+        }
+        
+        .nav-link:hover {
+            color: var(--royal-gold) !important;
+        }
+        
+        .gold-btn {
+            background-color: var(--royal-gold);
+            color: var(--dark-bg);
+            border: none;
+            font-weight: bold;
+        }
+        
+        .gold-btn:hover {
+            background-color: var(--dark-gold);
+            color: var(--pure-white);
+        }
+        
+        .outline-gold-btn {
+            border: 2px solid var(--royal-gold);
+            color: var(--royal-gold);
+            background: transparent;
+            font-weight: bold;
+        }
+        
+        .outline-gold-btn:hover {
+            background-color: var(--royal-gold);
+            color: var(--dark-bg);
+        }
+        
+        .card {
+            border: 1px solid var(--light-gold);
+            border-radius: 10px;
+            transition: transform 0.3s;
+            background-color: var(--pure-white);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            background-color: var(--royal-gold);
+            color: var(--dark-bg);
+            font-weight: bold;
+            border-bottom: none;
+        }
+        
+        .gold-text {
+            color: var(--royal-gold);
+        }
+        
+        .wallet-balance {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--royal-gold);
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: var(--dark-bg);
+            border-top: 2px solid var(--royal-gold);
+            z-index: 1000;
+        }
+        
+        .bottom-nav .nav-link {
+            text-align: center;
+            padding: 10px 0;
+        }
+        
+        .bottom-nav .nav-link i {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .bottom-nav .nav-link.active {
+            color: var(--royal-gold) !important;
+        }
+        
+        .main-content {
+            padding-bottom: 80px;
+        }
+        
+        .nft-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: var(--royal-gold);
+            color: var(--dark-bg);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .profit-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+        
+        .disclaimer {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        .referral-code {
+            background-color: var(--light-gold);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .countdown {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .withdraw-fee {
+            font-size: 0.8rem;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">LOT</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container main-content">
+        <!-- Dashboard Page -->
+        <div id="dashboardPage" class="page active">
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            Wallet Balance
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="wallet-balance">₦<span id="walletBalance">0</span></div>
+                            <button class="btn gold-btn mt-3" id="withdrawBtn">Withdraw</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            Account Status
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>Verification:</strong> 
+                                <span id="verificationStatus" class="badge bg-secondary">Not Verified</span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Upgrade:</strong> 
+                                <span id="upgradeStatus" class="badge bg-secondary">Not Upgraded</span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Referrals:</strong> 
+                                <span id="referralCount">0</span>/3
+                            </div>
+                            <button class="btn gold-btn w-100" id="upgradeBtn">Upgrade for ₦0.80</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            Referral Program
+                        </div>
+                        <div class="card-body">
+                            <p>Share your referral code and earn when your referrals verify their accounts.</p>
+                            <div class="referral-code" id="referralCode">LOADING...</div>
+                            <button class="btn outline-gold-btn w-100" id="copyRefBtn">Copy Referral Code</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            Deposit Funds
+                        </div>
+                        <div class="card-body">
+                            <p>Send money to this account to deposit funds:</p>
+                            <div class="alert alert-info">
+                                <strong>Opay Account:</strong><br>
+                                8038684515<br>
+                                CHUKWU EBUBECHI
+                            </div>
+                            <button class="btn gold-btn w-100" id="verifyDepositBtn">I've Made Payment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="disclaimer">
+                <h5>Disclaimer</h5>
+                <p>NFT purchases are subject to market risks. LOT is not responsible for any losses incurred. Minimum withdrawal amount is ₦8000 with a ₦1000 fee. Profits are added automatically after 24 hours of purchase.</p>
+            </div>
+        </div>
+
+        <!-- Marketplace Page -->
+        <div id="marketplacePage" class="page">
+            <h2 class="mt-4 gold-text">NFT Marketplace</h2>
+            <p class="mb-4">Purchase NFTs and earn profits after 24 hours</p>
+            
+            <div class="row" id="nftContainer">
+                <!-- NFTs will be loaded here -->
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    My NFTs
+                </div>
+                <div class="card-body">
+                    <table class="table" id="myNftsTable">
+                        <thead>
+                            <tr>
+                                <th>NFT</th>
+                                <th>Purchase Price</th>
+                                <th>Time Left</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Purchased NFTs will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Page -->
+        <div id="transactionsPage" class="page">
+            <h2 class="mt-4 gold-text">Transaction History</h2>
+            
+            <div class="card mt-4">
+                <div class="card-body">
+                    <table class="table" id="transactionsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Transactions will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdraw Page -->
+        <div id="withdrawPage" class="page">
+            <h2 class="mt-4 gold-text">Withdraw Funds</h2>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    Withdrawal Request
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="withdrawAmount" class="form-label">Amount (Minimum: ₦8000)</label>
+                        <input type="number" class="form-control" id="withdrawAmount" min="8000">
+                        <div class="withdraw-fee">Withdrawal fee: ₦1000 will be deducted</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bankDetails" class="form-label">Bank Details</label>
+                        <textarea class="form-control" id="bankDetails" rows="4" placeholder="Enter your bank account details (Account Number, Account Name, Bank Name)"></textarea>
+                    </div>
+                    <button class="btn gold-btn w-100" id="submitWithdrawalBtn">Request Withdrawal</button>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    Withdrawal History
+                </div>
+                <div class="card-body">
+                    <table class="table" id="withdrawalsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Withdrawals will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard (hidden for regular users) -->
+        <div id="adminPage" class="page">
+            <h2 class="mt-4 gold-text">Admin Dashboard</h2>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    Users
+                </div>
+                <div class="card-body">
+                    <table class="table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    Pending Withdrawals
+                </div>
+                <div class="card-body">
+                    <table class="table" id="pendingWithdrawalsTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Amount</th>
+                                <th>Bank Details</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Pending withdrawals will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="container">
+            <ul class="nav justify-content-between">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#" data-page="dashboardPage">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-page="marketplacePage">
+                        <i class="fas fa-store"></i>
+                        <span>Marketplace</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-page="transactionsPage">
+                        <i class="fas fa-history"></i>
+                        <span>Transactions</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-page="withdrawPage">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Withdraw</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Purchase NFT Modal -->
+    <div class="modal fade" id="purchaseModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Purchase NFT</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>You are about to purchase <strong id="nftNameToBuy"></strong> for ₦<span id="nftPriceToBuy"></span>.</p>
+                    <p>You will earn profit after 24 hours.</p>
+                    <div class="alert alert-warning">
+                        <small>You can only purchase one NFT per day.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn gold-btn" id="confirmPurchaseBtn">Purchase</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Referral Verification Modal -->
+    <div class="modal fade" id="referralModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Referral Verification</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>To complete your verification, you need to pay a ₦0.80 verification fee.</p>
+                    <p>Send ₦0.80 to:</p>
+                    <div class="alert alert-info">
+                        <strong>Opay Account:</strong><br>
+                        8038684515<br>
+                        CHUKWU EBUBECHI
+                    </div>
+                    <div class="mb-3">
+                        <label for="referralCodeInput" class="form-label">Referral Code</label>
+                        <input type="text" class="form-control" id="referralCodeInput" placeholder="Enter referral code">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn gold-btn" id="verifyPaymentBtn">I've Made Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap & Firebase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6KcqoGlMy-Rf37RC8qIeq4IoE4e9eqHE",
+            authDomain: "lots-37c4d.firebaseapp.com",
+            projectId: "lots-37c4d",
+            storageBucket: "lots-37c4d.appspot.com",
+            messagingSenderId: "204773705240",
+            appId: "1:204773705240:web:53df9eed7cc2de3c03e56d",
+            measurementId: "G-B5V2GFKHNX"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        
+        // Initialize Bootstrap tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Global variables
+        let currentUser = null;
+        let nfts = [];
+        let selectedNftId = null;
+        
+        // DOM Elements
+        const pages = document.querySelectorAll('.page');
+        const navLinks = document.querySelectorAll('.bottom-nav .nav-link');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const walletBalanceEl = document.getElementById('walletBalance');
+        const verificationStatusEl = document.getElementById('verificationStatus');
+        const upgradeStatusEl = document.getElementById('upgradeStatus');
+        const referralCountEl = document.getElementById('referralCount');
+        const referralCodeEl = document.getElementById('referralCode');
+        const copyRefBtn = document.getElementById('copyRefBtn');
+        const upgradeBtn = document.getElementById('upgradeBtn');
+        const verifyDepositBtn = document.getElementById('verifyDepositBtn');
+        const nftContainer = document.getElementById('nftContainer');
+        const myNftsTable = document.getElementById('myNftsTable').querySelector('tbody');
+        const transactionsTable = document.getElementById('transactionsTable').querySelector('tbody');
+        const withdrawAmountEl = document.getElementById('withdrawAmount');
+        const bankDetailsEl = document.getElementById('bankDetails');
+        const submitWithdrawalBtn = document.getElementById('submitWithdrawalBtn');
+        const withdrawalsTable = document.getElementById('withdrawalsTable').querySelector('tbody');
+        const purchaseModal = new bootstrap.Modal(document.getElementById('purchaseModal'));
+        const nftNameToBuyEl = document.getElementById('nftNameToBuy');
+        const nftPriceToBuyEl = document.getElementById('nftPriceToBuy');
+        const confirmPurchaseBtn = document.getElementById('confirmPurchaseBtn');
+        const referralModal = new bootstrap.Modal(document.getElementById('referralModal'));
+        const verifyPaymentBtn = document.getElementById('verifyPaymentBtn');
+        const referralCodeInput = document.getElementById('referralCodeInput');
+        
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', initApp);
+        navLinks.forEach(link => link.addEventListener('click', switchPage));
+        logoutBtn.addEventListener('click', logout);
+        copyRefBtn.addEventListener('click', copyReferralCode);
+        upgradeBtn.addEventListener('click', upgradeAccount);
+        verifyDepositBtn.addEventListener('click', showDepositVerification);
+        confirmPurchaseBtn.addEventListener('click', purchaseNft);
+        verifyPaymentBtn.addEventListener('click', verifyReferralPayment);
+        submitWithdrawalBtn.addEventListener('click', requestWithdrawal);
+        
+        // Initialize the app
+        function initApp() {
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    currentUser = user;
+                    checkAdminStatus();
+                    loadUserData();
+                    loadNFTs();
+                    loadUserNFTs();
+                    loadTransactions();
+                    loadWithdrawals();
+                } else {
+                    // Redirect to login page if not implemented
+                    window.location.href = 'login.html'; // You should create this page
+                }
+            });
+        }
+        
+        // Check if user is admin
+        function checkAdminStatus() {
+            if (currentUser.email === 'eluxxes@gmail.com') {
+                // Add admin link to navbar
+                const adminLink = document.createElement('li');
+                adminLink.className = 'nav-item';
+                adminLink.innerHTML = `
+                    <a class="nav-link" href="#" data-page="adminPage">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Admin</span>
+                    </a>
+                `;
+                document.querySelector('.bottom-nav .nav').appendChild(adminLink);
+                adminLink.querySelector('a').addEventListener('click', switchPage);
+                
+                // Load admin data
+                loadAdminData();
+            }
+        }
+        
+        // Switch between pages
+        function switchPage(e) {
+            e.preventDefault();
+            const pageId = this.getAttribute('data-page');
+            
+            // Update active nav link
+            navLinks.forEach(link => link.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show selected page
+            pages.forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+        
+        // Load user data
+        function loadUserData() {
+            db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
+                if (doc.exists) {
+                    const userData = doc.data();
+                    
+                    // Update wallet balance
+                    walletBalanceEl.textContent = userData.walletBalance.toFixed(2);
+                    
+                    // Update verification status
+                    if (userData.isVerified) {
+                        verificationStatusEl.className = 'badge bg-success';
+                        verificationStatusEl.textContent = 'Verified';
+                    } else {
+                        verificationStatusEl.className = 'badge bg-secondary';
+                        verificationStatusEl.textContent = 'Not Verified';
+                        
+                        // Show referral modal if not verified
+                        if (userData.referrals && userData.referrals.length < 3) {
+                            referralModal.show();
+                        }
+                    }
+                    
+                    // Update upgrade status
+                    if (userData.upgradeStatus) {
+                        upgradeStatusEl.className = 'badge bg-success';
+                        upgradeStatusEl.textContent = 'Upgraded';
+                        upgradeBtn.disabled = true;
+                    } else {
+                        upgradeStatusEl.className = 'badge bg-secondary';
+                        upgradeStatusEl.textContent = 'Not Upgraded';
+                        upgradeBtn.disabled = false;
+                    }
+                    
+                    // Update referral count
+                    if (userData.referrals) {
+                        referralCountEl.textContent = userData.referrals.length;
+                    }
+                    
+                    // Update referral code
+                    if (userData.referralCode) {
+                        referralCodeEl.textContent = userData.referralCode;
+                    }
+                }
+            });
+        }
+        
+        // Load NFTs
+        function loadNFTs() {
+            db.collection('nfts').get().then(snapshot => {
+                nfts = [];
+                nftContainer.innerHTML = '';
+                
+                snapshot.forEach(doc => {
+                    const nft = doc.data();
+                    nfts.push(nft);
+                    
+                    // Create NFT card
+                    const nftCard = document.createElement('div');
+                    nftCard.className = 'col-md-6 col-lg-3 mb-4';
+                    nftCard.innerHTML = `
+                        <div class="card h-100 position-relative">
+                            <div class="nft-badge">${nft.name.charAt(0)}</div>
+                            <div class="card-body text-center">
+                                <h5 class="card-title">${nft.name}</h5>
+                                <p class="card-text">Price: ₦${nft.minPrice}</p>
+                                <p class="card-text profit-badge">Profit: ${nft.profitRate * 100}%</p>
+                                <button class="btn gold-btn w-100 buy-nft-btn" data-id="${nft.id}">Buy Now</button>
+                            </div>
+                        </div>
+                    `;
+                    nftContainer.appendChild(nftCard);
+                });
+                
+                // Add event listeners to buy buttons
+                document.querySelectorAll('.buy-nft-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        selectedNftId = this.getAttribute('data-id');
+                        showPurchaseModal(selectedNftId);
+                    });
+                });
+            });
+        }
+        
+        // Show purchase modal
+        function showPurchaseModal(nftId) {
+            const nft = nfts.find(n => n.id === nftId);
+            if (nft) {
+                nftNameToBuyEl.textContent = nft.name;
+                nftPriceToBuyEl.textContent = nft.minPrice;
+                purchaseModal.show();
+            }
+        }
+        
+        // Purchase NFT
+        function purchaseNft() {
+            if (!selectedNftId) return;
+            
+            const nft = nfts.find(n => n.id === selectedNftId);
+            if (!nft) return;
+            
+            purchaseModal.hide();
+            
+            // Check if user has already purchased today
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            db.collection('purchases')
+                .where('userId', '==', currentUser.uid)
+                .where('purchaseDate', '>=', today)
+                .get()
+                .then(snapshot => {
+                    if (!snapshot.empty) {
+                        alert('You can only purchase one NFT per day');
+                        return;
+                    }
+                    
+                    // Create purchase record
+                    db.collection('purchases').add({
+                        userId: currentUser.uid,
+                        nftId: selectedNftId,
+                        purchasePrice: nft.minPrice,
+                        purchaseDate: firebase.firestore.FieldValue.serverTimestamp(),
+                        profitAdded: false
+                    }).then(() => {
+                        alert('NFT purchased successfully! Profit will be added after 24 hours.');
+                        loadUserNFTs();
+                    }).catch(error => {
+                        console.error('Error purchasing NFT:', error);
+                        alert('Error purchasing NFT. Please try again.');
+                    });
+                });
+        }
+        
+        // Load user's NFTs
+        function loadUserNFTs() {
+            db.collection('purchases')
+                .where('userId', '==', currentUser.uid)
+                .orderBy('purchaseDate', 'desc')
+                .get()
+                .then(snapshot => {
+                    myNftsTable.innerHTML = '';
+                    
+                    if (snapshot.empty) {
+                        myNftsTable.innerHTML = '<tr><td colspan="4" class="text-center">No NFTs purchased yet</td></tr>';
+                        return;
+                    }
+                    
+                    snapshot.forEach(doc => {
+                        const purchase = doc.data();
+                        const nft = nfts.find(n => n.id === purchase.nftId);
+                        const purchaseDate = purchase.purchaseDate.toDate();
+                        const profitDate = new Date(purchaseDate.getTime() + (24 * 60 * 60 * 1000));
+                        const now = new Date();
+                        
+                        let timeLeft = 'Completed';
+                        let status = 'Pending';
+                        
+                        if (profitDate > now) {
+                            const diff = profitDate - now;
+                            const hours = Math.floor(diff / (1000 * 60 * 60));
+                            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                            timeLeft = `${hours}h ${minutes}m`;
+                        } else if (!purchase.profitAdded) {
+                            status = 'Profit Ready';
+                        } else {
+                            status = 'Profit Paid';
+                        }
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${nft ? nft.name : 'Unknown'}</td>
+                            <td>₦${purchase.purchasePrice}</td>
+                            <td>${timeLeft}</td>
+                            <td>${status}</td>
+                        `;
+                        myNftsTable.appendChild(row);
+                    });
+                });
+        }
+        
+        // Load transactions
+        function loadTransactions() {
+            db.collection('transactions')
+                .where('userId', '==', currentUser.uid)
+                .orderBy('date', 'desc')
+                .get()
+                .then(snapshot => {
+                    transactionsTable.innerHTML = '';
+                    
+                    if (snapshot.empty) {
+                        transactionsTable.innerHTML = '<tr><td colspan="3" class="text-center">No transactions yet</td></tr>';
+                        return;
+                    }
+                    
+                    snapshot.forEach(doc => {
+                        const transaction = doc.data();
+                        const date = transaction.date.toDate();
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${formatDate(date)}</td>
+                            <td>${transaction.description}</td>
+                            <td class="${transaction.amount > 0 ? 'text-success' : 'text-danger'}">
+                                ${transaction.amount > 0 ? '+' : ''}₦${Math.abs(transaction.amount).toFixed(2)}
+                            </td>
+                        `;
+                        transactionsTable.appendChild(row);
+                    });
+                });
+        }
+        
+        // Load withdrawals
+        function loadWithdrawals() {
+            db.collection('withdrawals')
+                .where('userId', '==', currentUser.uid)
+                .orderBy('requestDate', 'desc')
+                .get()
+                .then(snapshot => {
+                    withdrawalsTable.innerHTML = '';
+                    
+                    if (snapshot.empty) {
+                        withdrawalsTable.innerHTML = '<tr><td colspan="3" class="text-center">No withdrawals yet</td></tr>';
+                        return;
+                    }
+                    
+                    snapshot.forEach(doc => {
+                        const withdrawal = doc.data();
+                        const date = withdrawal.requestDate.toDate();
+                        let statusClass = 'text-warning';
+                        let statusText = 'Pending';
+                        
+                        if (withdrawal.status === 'processed') {
+                            statusClass = 'text-success';
+                            statusText = 'Completed';
+                        } else if (withdrawal.status === 'rejected') {
+                            statusClass = 'text-danger';
+                            statusText = 'Rejected';
+                        }
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${formatDate(date)}</td>
+                            <td>₦${withdrawal.amount.toFixed(2)}</td>
+                            <td class="${statusClass}">${statusText}</td>
+                        `;
+                        withdrawalsTable.appendChild(row);
+                    });
+                });
+        }
+        
+        // Request withdrawal
+        function requestWithdrawal() {
+            const amount = parseFloat(withdrawAmountEl.value);
+            const bankDetails = bankDetailsEl.value.trim();
+            
+            if (isNaN(amount) || amount < 8000) {
+                alert('Minimum withdrawal amount is ₦8000');
+                return;
+            }
+            
+            if (!bankDetails) {
+                alert('Please enter your bank details');
+                return;
+            }
+            
+            // Check if user has enough balance (including fee)
+            const currentBalance = parseFloat(walletBalanceEl.textContent);
+            if (currentBalance < (amount + 1000)) {
+                alert('Insufficient balance for withdrawal and fee');
+                return;
+            }
+            
+            submitWithdrawalBtn.disabled = true;
+            
+            // Create withdrawal request
+            db.collection('withdrawals').add({
+                userId: currentUser.uid,
+                amount: amount,
+                fee: 1000,
+                status: 'pending',
+                requestDate: firebase.firestore.FieldValue.serverTimestamp(),
+                processedDate: null,
+                bankDetails: bankDetails
+            }).then(() => {
+                alert('Withdrawal request submitted successfully. Funds will arrive within 5 hours.');
+                withdrawAmountEl.value = '';
+                bankDetailsEl.value = '';
+                loadWithdrawals();
+            }).catch(error => {
+                console.error('Error requesting withdrawal:', error);
+                alert('Error requesting withdrawal. Please try again.');
+            }).finally(() => {
+                submitWithdrawalBtn.disabled = false;
+            });
+        }
+        
+        // Copy referral code
+        function copyReferralCode() {
+            const code = referralCodeEl.textContent;
+            if (code && code !== 'LOADING...') {
+                navigator.clipboard.writeText(code).then(() => {
+                    const originalText = copyRefBtn.innerHTML;
+                    copyRefBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    setTimeout(() => {
+                        copyRefBtn.innerHTML = originalText;
+                    }, 2000);
+                });
+            }
+        }
+        
+        // Upgrade account
+        function upgradeAccount() {
+            if (confirm('Upgrade your account for ₦0.80 to access NFT purchases?')) {
+                // In a real app, you would process payment here
+                // For now, we'll just update the status
+                db.collection('users').doc(currentUser.uid).update({
+                    upgradeStatus: true
+                }).then(() => {
+                    alert('Account upgraded successfully!');
+                }).catch(error => {
+                    console.error('Error upgrading account:', error);
+                    alert('Error upgrading account. Please try again.');
+                });
+            }
+        }
+        
+        // Show deposit verification
+        function showDepositVerification() {
+            alert('After making payment, contact support with your payment proof for manual verification.');
+        }
+        
+        // Verify referral payment
+        function verifyReferralPayment() {
+            const referralCode = referralCodeInput.value.trim();
+            
+            if (!referralCode) {
+                alert('Please enter the referral code');
+                return;
+            }
+            
+            // In a real app, you would verify payment here
+            // For now, we'll just show a message
+            alert('After making payment, contact support with your payment proof for manual verification.');
+            referralModal.hide();
+        }
+        
+        // Admin functions
+        function loadAdminData() {
+            // Load all users
+            db.collection('users').get().then(snapshot => {
+                const usersTable = document.getElementById('usersTable').querySelector('tbody');
+                usersTable.innerHTML = '';
+                
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.email}</td>
+                        <td>₦${user.walletBalance ? user.walletBalance.toFixed(2) : '0.00'}</td>
+                        <td>
+                            ${user.isVerified ? '<span class="badge bg-success">Verified</span>' : '<span class="badge bg-secondary">Not Verified</span>'}
+                            ${user.upgradeStatus ? '<span class="badge bg-success ms-1">Upgraded</span>' : '<span class="badge bg-secondary ms-1">Not Upgraded</span>'}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary edit-user-btn" data-id="${doc.id}">Edit</button>
+                        </td>
+                    `;
+                    usersTable.appendChild(row);
+                });
+            });
+            
+            // Load pending withdrawals
+            db.collection('withdrawals')
+                .where('status', '==', 'pending')
+                .orderBy('requestDate', 'asc')
+                .get()
+                .then(snapshot => {
+                    const pendingTable = document.getElementById('pendingWithdrawalsTable').querySelector('tbody');
+                    pendingTable.innerHTML = '';
+                    
+                    if (snapshot.empty) {
+                        pendingTable.innerHTML = '<tr><td colspan="4" class="text-center">No pending withdrawals</td></tr>';
+                        return;
+                    }
+                    
+                    snapshot.forEach(doc => {
+                        const withdrawal = doc.data();
+                        const userRef = db.collection('users').doc(withdrawal.userId);
+                        
+                        userRef.get().then(userDoc => {
+                            const user = userDoc.data();
+                            const date = withdrawal.requestDate.toDate();
+                            
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${user.email}</td>
+                                <td>₦${withdrawal.amount.toFixed(2)}</td>
+                                <td>${withdrawal.bankDetails}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-success process-withdrawal-btn" data-id="${doc.id}">Process</button>
+                                    <button class="btn btn-sm btn-danger reject-withdrawal-btn" data-id="${doc.id}">Reject</button>
+                                </td>
+                            `;
+                            pendingTable.appendChild(row);
+                            
+                            // Add event listeners
+                            row.querySelector('.process-withdrawal-btn').addEventListener('click', () => processWithdrawal(doc.id));
+                            row.querySelector('.reject-withdrawal-btn').addEventListener('click', () => rejectWithdrawal(doc.id));
+                        });
+                    });
+                });
+        }
+        
+        // Process withdrawal (admin)
+        function processWithdrawal(withdrawalId) {
+            if (confirm('Mark this withdrawal as processed and send payment?')) {
+                db.collection('withdrawals').doc(withdrawalId).update({
+                    status: 'processed',
+                    processedDate: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    alert('Withdrawal marked as processed');
+                    loadAdminData();
+                }).catch(error => {
+                    console.error('Error processing withdrawal:', error);
+                    alert('Error processing withdrawal');
+                });
+            }
+        }
+        
+        // Reject withdrawal (admin)
+        function rejectWithdrawal(withdrawalId) {
+            if (confirm('Reject this withdrawal request?')) {
+                db.collection('withdrawals').doc(withdrawalId).update({
+                    status: 'rejected',
+                    processedDate: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    // Refund the amount and fee to user's wallet
+                    db.collection('withdrawals').doc(withdrawalId).get().then(doc => {
+                        const withdrawal = doc.data();
+                        db.collection('users').doc(withdrawal.userId).update({
+                            walletBalance: firebase.firestore.FieldValue.increment(withdrawal.amount + withdrawal.fee)
+                        });
+                        
+                        // Record transaction
+                        db.collection('transactions').add({
+                            userId: withdrawal.userId,
+                            amount: withdrawal.amount + withdrawal.fee,
+                            type: 'refund',
+                            date: firebase.firestore.FieldValue.serverTimestamp(),
+                            description: `Refund for rejected withdrawal #${withdrawalId}`
+                        });
+                    });
+                    
+                    alert('Withdrawal rejected and funds returned to user');
+                    loadAdminData();
+                }).catch(error => {
+                    console.error('Error rejecting withdrawal:', error);
+                    alert('Error rejecting withdrawal');
+                });
+            }
+        }
+        
+        // Logout
+        function logout() {
+            auth.signOut().then(() => {
+                window.location.href = 'login.html';
+            });
+        }
+        
+        // Helper function to format date
+        function formatDate(date) {
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+    </script>
+</body>
+</html>
